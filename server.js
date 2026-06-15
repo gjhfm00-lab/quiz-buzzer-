@@ -301,7 +301,7 @@ app.get('/export/:code', (req, res) => {
   const header = ['순서','닉네임','답안','제출시각'];
   const sheetDefs = rounds.length === 0
     ? [{ name:'라운드 1', rows:[header] }]
-    : rounds.map(r => ({ name:`라운드 ${r}`, rows:[header, ...byRound[r].map(h=>[h.order,h.nickname,h.answer,new Date(h.time).toLocaleString('ko-KR')])] }));
+    : rounds.map(r => ({ name:`라운드 ${r}`, rows:[header, ...byRound[r].map(h=>[h.order,h.nickname,h.answer,new Date(h.time).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false })])] }));
 
   function toBytes(str) { return Buffer.from(str,'utf8'); }
   function crc32(buf) {

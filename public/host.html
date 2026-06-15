@@ -267,6 +267,18 @@
             </div>
           </div>
 
+          <!-- 카드 투명도 -->
+          <div class="design-item" style="margin-top:14px;">
+            <label>카드 투명도 <span id="cardOpacityVal">100%</span></label>
+            <div style="display:flex; align-items:center; gap:12px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 14px;">
+              <span style="font-size:12px; color:var(--text-muted);">투명</span>
+              <input type="range" id="cardOpacity" min="10" max="100" value="100" step="5"
+                style="flex:1; accent-color:var(--accent); cursor:pointer;" />
+              <span style="font-size:12px; color:var(--text-muted);">불투명</span>
+            </div>
+            <span style="font-size:12px; color:var(--text-muted); margin-top:4px;">※ 정답 입력칸은 항상 불투명하게 유지됩니다.</span>
+          </div>
+
           <!-- 배경 이미지 -->
           <div class="design-section-title">배경 이미지</div>
           <div class="design-item">

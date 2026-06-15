@@ -212,6 +212,11 @@ function applyDesign(d) {
   if (d.surface) { root.style.setProperty('--surface',d.surface); root.style.setProperty('--surface-2',lighten(d.surface,0.06)); }
   if (d.text)    root.style.setProperty('--text',d.text);
 
+  // 카드 투명도
+  if (d.cardOpacity !== undefined) {
+    root.style.setProperty('--card-opacity', d.cardOpacity / 100);
+  }
+
   // 배경 이미지
   if (d.bgImage) {
     document.body.style.backgroundImage=`url(${d.bgImage})`;
@@ -220,24 +225,23 @@ function applyDesign(d) {
     document.body.style.backgroundAttachment='fixed';
   } else { document.body.style.backgroundImage=''; }
 
-  // 브랜드
+  // 브랜드 영역 재구성 (원 도형 없이)
   const brand = document.querySelector('.brand');
   if (brand) {
-    let iconEl = brand.querySelector('.brand-icon');
-    if (!iconEl) { iconEl=document.createElement('span'); iconEl.className='brand-icon'; brand.insertBefore(iconEl,brand.firstChild); }
+    brand.innerHTML = '';
     if (d.icon) {
-      iconEl.innerHTML=`<img src="${d.icon}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
-    } else {
-      const acc=d.accent||'#ff4655';
-      iconEl.innerHTML=`<span class="dot" style="background:${acc};box-shadow:0 0 14px ${acc};display:inline-block;width:12px;height:12px;border-radius:50%;"></span>`;
+      const iconEl = document.createElement('span');
+      iconEl.style.cssText = 'display:inline-flex;align-items:center;margin-right:8px;';
+      iconEl.innerHTML = `<img src="${d.icon}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
+      brand.appendChild(iconEl);
     }
-    let titleEl = brand.querySelector('.brand-text');
-    if (!titleEl) { titleEl=document.createElement('span'); titleEl.className='brand-text'; brand.appendChild(titleEl); }
+    const titleEl = document.createElement('span');
     if (d.logo) {
-      titleEl.innerHTML=`<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
+      titleEl.innerHTML = `<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
     } else {
-      titleEl.textContent=' '+(d.title||'QUIZ BUZZER');
+      titleEl.textContent = d.title || 'QUIZ BUZZER';
     }
+    brand.appendChild(titleEl);
   }
 
   // 버저 버튼
@@ -252,3 +256,13 @@ function applyDesign(d) {
   }
 }
 socket.on('designUpdate', applyDesign);
+
+// ── 페이지 로드 시 브랜드 원 도형 제거 (디자인 설정 전 기본 상태) ──
+window.addEventListener('DOMContentLoaded', () => {
+  const brand = document.querySelector('.brand');
+  if (brand) {
+    // 기존 .dot(원 도형) 제거
+    const dot = brand.querySelector('.dot');
+    if (dot) dot.remove();
+  }
+});

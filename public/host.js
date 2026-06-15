@@ -60,16 +60,17 @@ function lighten(hex,amt){ try{ const[r,g,b]=hexToRgb(hex); return rgbToHex(r+(2
    DESIGN SETTINGS
 ══════════════════════════════════════════ */
 const DEFAULTS = {
-  accent:     '#ff4655',
-  bg:         '#11121c',
-  surface:    '#1c1e2e',
-  text:       '#f2f2f7',
-  shape:      'circle',
-  buzzerText: 'BUZZ',
-  title:      'QUIZ BUZZER',
-  icon:       null,   // 브랜드 앞 도형/아이콘 이미지
-  logo:       null,   // 로고 이미지 (텍스트 대신)
-  bgImage:    null,   // 배경 이미지
+  accent:      '#ff4655',
+  bg:          '#11121c',
+  surface:     '#1c1e2e',
+  text:        '#f2f2f7',
+  cardOpacity: 100,
+  shape:       'circle',
+  buzzerText:  'BUZZ',
+  title:       'QUIZ BUZZER',
+  icon:        null,
+  logo:        null,
+  bgImage:     null,
 };
 
 function loadDesign() {
@@ -98,6 +99,10 @@ function applyDesign(d) {
   root.style.setProperty('--surface',   d.surface);
   root.style.setProperty('--surface-2', lighten(d.surface, 0.06));
   root.style.setProperty('--text',      d.text);
+
+  // 카드 투명도
+  const opacity = (d.cardOpacity !== undefined ? d.cardOpacity : 100) / 100;
+  root.style.setProperty('--card-opacity', opacity);
 
   // 배경 이미지
   if (d.bgImage) {
@@ -137,6 +142,9 @@ function applyDesign(d) {
   document.getElementById('colorTextHex').textContent  = d.text;
   document.getElementById('siteTitle').value           = d.title || '';
   document.getElementById('buzzerText').value          = d.buzzerText || 'BUZZ';
+  const opacityVal = d.cardOpacity !== undefined ? d.cardOpacity : 100;
+  document.getElementById('cardOpacity').value         = opacityVal;
+  document.getElementById('cardOpacityVal').textContent = opacityVal + '%';
 
   document.querySelectorAll('.shape-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.shape === d.shape)
@@ -176,6 +184,13 @@ function updatePreviewBuzzer(d) {
   pb.style.boxShadow    = `0 6px 0 ${darken(d.accent,0.25)}, 0 10px 20px ${d.accent}55`;
   pb.textContent        = d.buzzerText || 'BUZZ';
 }
+
+// 투명도 슬라이더 실시간 반영
+document.getElementById('cardOpacity').addEventListener('input', e => {
+  document.getElementById('cardOpacityVal').textContent = e.target.value + '%';
+  const opacity = e.target.value / 100;
+  document.documentElement.style.setProperty('--card-opacity', opacity);
+});
 
 // 색상 피커 실시간 반영
 ['colorAccent','colorBg','colorSurface','colorText'].forEach(id => {
@@ -269,6 +284,7 @@ function collectFormDesign() {
     bg:         document.getElementById('colorBg').value,
     surface:    document.getElementById('colorSurface').value,
     text:       document.getElementById('colorText').value,
+    cardOpacity: parseInt(document.getElementById('cardOpacity').value, 10),
     shape:      activeShape ? activeShape.dataset.shape : 'circle',
     buzzerText: document.getElementById('buzzerText').value.trim() || 'BUZZ',
     title:      document.getElementById('siteTitle').value.trim() || 'QUIZ BUZZER',

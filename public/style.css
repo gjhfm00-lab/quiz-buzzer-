@@ -17,6 +17,7 @@
   --radius: 16px;
   --font-display: 'Space Grotesk', 'Pretendard', sans-serif;
   --font-body: 'Inter', 'Pretendard', sans-serif;
+  --card-opacity: 1;
 }
 
 * {
@@ -76,12 +77,19 @@ a {
 
 /* ---------- card ---------- */
 .card {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) calc(var(--card-opacity) * 100%), transparent);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
   width: 100%;
   box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.6);
+}
+
+/* 정답 입력란은 투명도 영향 없이 항상 불투명 */
+textarea#answerInput,
+input#answerInput {
+  background: var(--surface-2) !important;
+  opacity: 1 !important;
 }
 
 .card + .card {
