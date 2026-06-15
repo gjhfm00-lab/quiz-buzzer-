@@ -203,39 +203,58 @@ function applyDesign(d) {
   if (d.surface) { root.style.setProperty('--surface', d.surface); root.style.setProperty('--surface-2', lighten(d.surface, 0.06)); }
   if (d.text)    root.style.setProperty('--text', d.text);
 
-  // 브랜드 타이틀
-  const brandTitle = document.querySelector('.brand');
-  if (brandTitle && d.title) {
-    const dot = brandTitle.querySelector('.dot');
-    if (dot) dot.style.background = d.accent;
-    brandTitle.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = ` ${d.title}`; });
+  // 배경 이미지
+  if (d.bgImage) {
+    document.body.style.backgroundImage = `url(${d.bgImage})`;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+  } else {
+    document.body.style.backgroundImage = '';
   }
 
-  // 버저 버튼 모양
-  const buzzer = document.getElementById('buzzerBtn');
-  if (buzzer && d.shape) {
-    const radiusMap = { circle: '50%', rounded: '24px', square: '8px' };
-    buzzer.style.borderRadius = radiusMap[d.shape] || '50%';
-  }
-  if (buzzer && d.accent) {
-    buzzer.style.background = `radial-gradient(circle at 35% 30%, ${lighten(d.accent,0.15)} 0%, ${d.accent} 55%, ${darken(d.accent,0.2)} 100%)`;
-    buzzer.style.boxShadow  = `0 12px 0 ${darken(d.accent,0.25)}, 0 16px 30px ${d.accent}55`;
-  }
-
-  // 로고 이미지
+  // 브랜드 아이콘 & 타이틀
   const brand = document.querySelector('.brand');
   if (brand) {
-    const existingLogo = brand.querySelector('img.brand-logo');
+    // 아이콘 (도형/이미지)
+    let iconEl = brand.querySelector('.brand-icon');
+    if (!iconEl) {
+      iconEl = document.createElement('span');
+      iconEl.className = 'brand-icon';
+      brand.insertBefore(iconEl, brand.firstChild);
+    }
+    if (d.icon) {
+      iconEl.innerHTML = `<img src="${d.icon}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
+    } else {
+      const accent = d.accent || '#ff4655';
+      iconEl.innerHTML = `<span class="dot" style="background:${accent};box-shadow:0 0 14px ${accent};display:inline-block;width:12px;height:12px;border-radius:50%;"></span>`;
+    }
+
+    // 로고 이미지 or 텍스트
+    let titleEl = brand.querySelector('.brand-text');
+    if (!titleEl) {
+      titleEl = document.createElement('span');
+      titleEl.className = 'brand-text';
+      brand.appendChild(titleEl);
+    }
     if (d.logo) {
-      if (!existingLogo) {
-        const img = document.createElement('img');
-        img.className = 'brand-logo';
-        img.style.cssText = 'height:28px;object-fit:contain;vertical-align:middle;margin-right:4px;';
-        brand.insertBefore(img, brand.firstChild);
-      }
-      brand.querySelector('img.brand-logo').src = d.logo;
-    } else if (existingLogo) {
-      existingLogo.remove();
+      titleEl.innerHTML = `<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
+    } else {
+      titleEl.textContent = ' ' + (d.title || 'QUIZ BUZZER');
+    }
+  }
+
+  // 버저 버튼
+  const buzzer = document.getElementById('buzzerBtn');
+  if (buzzer) {
+    if (d.buzzerText) buzzer.textContent = d.buzzerText;
+    if (d.shape) {
+      const radiusMap = { circle: '50%', rounded: '24px', square: '8px' };
+      buzzer.style.borderRadius = radiusMap[d.shape] || '50%';
+    }
+    if (d.accent) {
+      buzzer.style.background = `radial-gradient(circle at 35% 30%, ${lighten(d.accent,0.15)} 0%, ${d.accent} 55%, ${darken(d.accent,0.2)} 100%)`;
+      buzzer.style.boxShadow  = `0 12px 0 ${darken(d.accent,0.25)}, 0 16px 30px ${d.accent}55`;
     }
   }
 }

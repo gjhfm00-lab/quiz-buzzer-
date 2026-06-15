@@ -11,132 +11,115 @@
   <style>
     /* ── 탭 네비게이션 ── */
     .tab-nav {
-      display: flex;
-      gap: 4px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 4px;
-      width: 100%;
-      margin-bottom: 16px;
+      display: flex; gap: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 4px; width: 100%; margin-bottom: 16px;
     }
     .tab-btn {
-      flex: 1;
-      padding: 10px 6px;
-      border: none;
-      border-radius: 10px;
-      background: transparent;
-      color: var(--text-muted);
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      flex: 1; padding: 10px 6px; border: none; border-radius: 10px;
+      background: transparent; color: var(--text-muted);
+      font-family: var(--font-display); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
     }
-    .tab-btn.active {
-      background: var(--surface-2);
-      color: var(--text);
-    }
+    .tab-btn.active { background: var(--surface-2); color: var(--text); }
     .tab-panel { display: none; width: 100%; }
     .tab-panel.active { display: block; }
 
     /* ── 디자인 설정 ── */
-    .design-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+    .design-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 480px) { .design-grid { grid-template-columns: 1fr; } }
 
     .design-item { display: flex; flex-direction: column; gap: 6px; }
     .design-item label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
 
     .color-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 12px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px;
     }
     .color-row input[type="color"] {
-      width: 32px; height: 32px;
-      border: none; padding: 0;
-      background: transparent;
-      cursor: pointer;
-      border-radius: 6px;
+      width: 32px; height: 32px; border: none; padding: 0;
+      background: transparent; cursor: pointer; border-radius: 6px;
     }
     .color-row span { font-size: 13px; color: var(--text-muted); font-family: monospace; }
 
     .shape-btns { display: flex; gap: 8px; }
     .shape-btn {
-      flex: 1; padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface-2);
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: border-color 0.15s, color 0.15s;
+      flex: 1; padding: 10px; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--surface-2);
+      color: var(--text-muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: border-color 0.15s, color 0.15s;
     }
-    .shape-btn.active {
-      border-color: var(--accent);
-      color: var(--text);
+    .shape-btn.active { border-color: var(--accent); color: var(--text); }
+
+    .img-upload-box {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 80px; background: var(--surface-2);
+      border: 2px dashed var(--border); border-radius: 10px;
+      overflow: hidden; cursor: pointer; position: relative; transition: border-color 0.15s;
+    }
+    .img-upload-box:hover { border-color: var(--accent); }
+    .img-upload-box img { max-height: 70px; max-width: 100%; object-fit: contain; }
+    .img-upload-box span { font-size: 13px; color: var(--text-muted); padding: 12px; text-align: center; }
+    .img-upload-box input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
 
-    .logo-preview {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 60px;
-      background: var(--surface-2);
-      border: 1px dashed var(--border);
-      border-radius: 10px;
-      overflow: hidden;
+    /* 배경 이미지 미리보기 */
+    .bg-preview {
+      width: 100%; height: 80px; border-radius: 10px;
+      border: 1px solid var(--border); overflow: hidden;
+      background: var(--surface-2); display: flex; align-items: center; justify-content: center;
     }
-    .logo-preview img { max-height: 50px; max-width: 100%; object-fit: contain; }
-    .logo-preview span { font-size: 13px; color: var(--text-muted); }
+    .bg-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .bg-preview span { font-size: 13px; color: var(--text-muted); }
 
-    .design-save-row { margin-top: 20px; }
-    .reset-link {
-      display: block;
-      text-align: center;
-      margin-top: 12px;
-      font-size: 13px;
-      color: var(--text-muted);
-      cursor: pointer;
-      text-decoration: underline;
+    .remove-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 8px; padding: 6px 12px;
+      font-size: 12px; cursor: pointer; align-self: flex-start;
     }
-    .reset-link:hover { color: var(--accent); }
+    .remove-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-    /* ── 실시간 미리보기 버저 ── */
+    /* 미리보기 버저 */
     .preview-buzzer-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 0 8px;
-      gap: 10px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 0 8px; gap: 10px;
     }
     .preview-buzzer {
       width: 100px; height: 100px;
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display);
-      font-size: 14px; font-weight: 700;
-      color: #fff;
-      cursor: default;
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      color: #fff; cursor: default;
       transition: background 0.2s, border-radius 0.3s, box-shadow 0.2s;
     }
     .preview-label { font-size: 12px; color: var(--text-muted); }
+
+    .design-save-row { margin-top: 20px; }
+    .reset-link {
+      display: block; text-align: center; margin-top: 12px;
+      font-size: 13px; color: var(--text-muted); cursor: pointer; text-decoration: underline;
+    }
+    .reset-link:hover { color: var(--accent); }
+
+    /* 섹션 구분선 */
+    .design-section-title {
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin: 20px 0 10px; border-top: 1px solid var(--border); padding-top: 16px;
+    }
+    .design-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="brand" id="brandEl"><span class="dot" id="brandDot"></span> <span id="brandTitle">QUIZ BUZZER</span> · HOST</div>
+    <div class="brand" id="brandEl">
+      <span id="brandIcon"><span class="dot" id="brandDot"></span></span>
+      <span id="brandTitle">QUIZ BUZZER</span>
+      <span style="color:var(--text-muted);"> · HOST</span>
+    </div>
 
-    <!-- ===== Step 1: Create / reconnect room ===== -->
+    <!-- ===== Step 1: 방 만들기 ===== -->
     <div class="card" id="setupCard">
       <h1>방 만들기</h1>
       <p class="lead">원하는 방 코드를 직접 입력하거나, 비워두면 자동으로 생성됩니다.</p>
@@ -148,7 +131,6 @@
         <button class="btn btn-primary" id="createBtn">새 방 만들기</button>
       </div>
       <div class="error-msg" id="createError"></div>
-
       <div style="margin-top: 22px;">
         <p class="lead" style="margin-bottom: 8px;">이미 만든 방으로 돌아가려면 코드를 입력하세요.</p>
         <div class="field">
@@ -161,17 +143,16 @@
       </div>
     </div>
 
-    <!-- ===== Step 2: Host control panel ===== -->
+    <!-- ===== Step 2: 호스트 패널 ===== -->
     <div id="hostPanel" style="display:none; width: 100%;">
 
-      <!-- 탭 네비게이션 -->
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="main">🎮 진행</button>
         <button class="tab-btn" data-tab="players">👥 참가자</button>
         <button class="tab-btn" data-tab="design">🎨 디자인</button>
       </nav>
 
-      <!-- ── 탭 1: 진행 ── -->
+      <!-- 탭 1: 진행 -->
       <div class="tab-panel active" id="tab-main">
         <div class="card">
           <div class="room-code-box">
@@ -222,7 +203,7 @@
         </div>
       </div>
 
-      <!-- ── 탭 2: 참가자 ── -->
+      <!-- 탭 2: 참가자 -->
       <div class="tab-panel" id="tab-players">
         <div class="card">
           <div class="meta-row">
@@ -234,14 +215,15 @@
         </div>
       </div>
 
-      <!-- ── 탭 3: 디자인 설정 ── -->
+      <!-- 탭 3: 디자인 설정 -->
       <div class="tab-panel" id="tab-design">
         <div class="card">
           <h2>🎨 디자인 설정</h2>
-          <p class="lead">변경한 내용은 참가자 화면에도 바로 반영되고, 새로고침해도 유지됩니다.</p>
+          <p class="lead">변경 후 "저장 및 적용"을 누르면 참가자 화면에도 즉시 반영됩니다.</p>
 
+          <!-- 색상 -->
+          <div class="design-section-title">색상</div>
           <div class="design-grid">
-            <!-- 강조색 -->
             <div class="design-item">
               <label>메인 강조색 (버저 색)</label>
               <div class="color-row">
@@ -249,7 +231,6 @@
                 <span id="colorAccentHex">#ff4655</span>
               </div>
             </div>
-            <!-- 배경색 -->
             <div class="design-item">
               <label>배경색</label>
               <div class="color-row">
@@ -257,7 +238,6 @@
                 <span id="colorBgHex">#11121c</span>
               </div>
             </div>
-            <!-- 카드색 -->
             <div class="design-item">
               <label>카드 색상</label>
               <div class="color-row">
@@ -265,7 +245,6 @@
                 <span id="colorSurfaceHex">#1c1e2e</span>
               </div>
             </div>
-            <!-- 텍스트색 -->
             <div class="design-item">
               <label>텍스트 색상</label>
               <div class="color-row">
@@ -275,18 +254,33 @@
             </div>
           </div>
 
-          <!-- 버저 버튼 모양 -->
-          <div class="design-item" style="margin-top:16px;">
-            <label>버저 버튼 모양</label>
+          <!-- 배경 이미지 -->
+          <div class="design-section-title">배경 이미지</div>
+          <div class="design-item">
+            <label>배경 이미지 업로드 (배경색 위에 덮어씌워집니다)</label>
+            <div class="bg-preview" id="bgPreview"><span>배경 이미지 없음</span></div>
+            <div class="img-upload-box" style="margin-top:8px;">
+              <span>📁 클릭하여 이미지 선택</span>
+              <input type="file" id="bgFile" accept="image/*" />
+            </div>
+            <button class="remove-btn" id="bgRemoveBtn">배경 이미지 제거</button>
+          </div>
+
+          <!-- 버저 버튼 -->
+          <div class="design-section-title">버저 버튼</div>
+          <div class="design-item">
+            <label>버튼 모양</label>
             <div class="shape-btns">
               <button class="shape-btn active" data-shape="circle">⬤ 원형</button>
               <button class="shape-btn" data-shape="rounded">▣ 둥근 사각형</button>
               <button class="shape-btn" data-shape="square">■ 사각형</button>
             </div>
           </div>
-
-          <!-- 미리보기 -->
-          <div class="design-item" style="margin-top:16px;">
+          <div class="design-item" style="margin-top:12px;">
+            <label>버튼 안 텍스트 (최대 5글자)</label>
+            <input type="text" id="buzzerText" maxlength="5" placeholder="BUZZ" style="text-align:center; font-size:18px; letter-spacing:2px; font-weight:700;" />
+          </div>
+          <div class="design-item" style="margin-top:12px;">
             <label>버저 버튼 미리보기</label>
             <div class="preview-buzzer-wrap">
               <div class="preview-buzzer" id="previewBuzzer">BUZZ</div>
@@ -294,20 +288,35 @@
             </div>
           </div>
 
-          <!-- 사이트 이름 -->
-          <div class="design-item" style="margin-top:16px;">
+          <!-- 브랜드 -->
+          <div class="design-section-title">브랜드</div>
+          <div class="design-item">
             <label>사이트 이름 (로고 텍스트)</label>
             <input type="text" id="siteTitle" placeholder="QUIZ BUZZER" maxlength="30" />
           </div>
-
-          <!-- 로고 이미지 -->
-          <div class="design-item" style="margin-top:16px;">
-            <label>로고 이미지 업로드 (선택)</label>
-            <div class="logo-preview" id="logoPreview">
-              <span>이미지 없음</span>
+          <div class="design-item" style="margin-top:12px;">
+            <label>로고 앞 도형/아이콘 이미지 (작은 아이콘, 선택)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div class="img-upload-box" style="width:80px; height:80px; flex-shrink:0;">
+                <span style="font-size:20px;">+</span>
+                <input type="file" id="iconFile" accept="image/*" />
+              </div>
+              <div id="iconPreview" style="display:flex; align-items:center; gap:8px; flex:1;">
+                <span style="font-size:13px; color:var(--text-muted);">업로드하면 브랜드 이름 앞에 표시돼요</span>
+              </div>
             </div>
-            <input type="file" id="logoFile" accept="image/*" style="margin-top:8px;" />
-            <button class="btn btn-ghost" id="logoRemoveBtn" style="margin-top:8px; font-size:13px;">로고 이미지 제거</button>
+            <button class="remove-btn" id="iconRemoveBtn">아이콘 제거</button>
+          </div>
+          <div class="design-item" style="margin-top:12px;">
+            <label>로고 이미지 (텍스트 대신 사용, 선택)</label>
+            <div class="img-upload-box">
+              <span>📁 클릭하여 로고 이미지 선택</span>
+              <input type="file" id="logoFile" accept="image/*" />
+            </div>
+            <div class="img-upload-box" id="logoPreview" style="margin-top:8px; border-style:solid;">
+              <span>로고 이미지 없음</span>
+            </div>
+            <button class="remove-btn" id="logoRemoveBtn">로고 이미지 제거</button>
           </div>
 
           <div class="design-save-row">
