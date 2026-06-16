@@ -1,39 +1,36 @@
 const socket = io();
 
-/* ══════════════════════════════════════════
-   DOM refs
-══════════════════════════════════════════ */
-const setupCard      = document.getElementById('setupCard');
-const hostPanel      = document.getElementById('hostPanel');
-const createError    = document.getElementById('createError');
-const setupError     = document.getElementById('setupError');
-const createBtn      = document.getElementById('createBtn');
-const customCode     = document.getElementById('customCode');
-const reconnectBtn   = document.getElementById('reconnectBtn');
-const reconnectCode  = document.getElementById('reconnectCode');
-const roomCodeDisplay= document.getElementById('roomCodeDisplay');
-const joinLinkInput  = document.getElementById('joinLinkInput');
-const copyLinkBtn    = document.getElementById('copyLinkBtn');
-const playerCountPill= document.getElementById('playerCountPill');
-const roundPill      = document.getElementById('roundPill');
-const lockPill       = document.getElementById('lockPill');
-const lockBtn        = document.getElementById('lockBtn');
-const resetBtn       = document.getElementById('resetBtn');
-const buzzList       = document.getElementById('buzzList');
-const buzzCount      = document.getElementById('buzzCount');
-const emptyState     = document.getElementById('emptyState');
-const playerTags     = document.getElementById('playerTags');
-const playerListCount= document.getElementById('playerListCount');
-const playerEmptyState=document.getElementById('playerEmptyState');
-const downloadBtn    = document.getElementById('downloadBtn');
-const qrCanvas       = document.getElementById('qrCanvas');
-const brandDot       = document.getElementById('brandDot');
-const brandTitle     = document.getElementById('brandTitle');
-const brandIcon      = document.getElementById('brandIcon');
+/* ══ DOM refs ══ */
+const setupCard       = document.getElementById('setupCard');
+const hostPanel       = document.getElementById('hostPanel');
+const createError     = document.getElementById('createError');
+const setupError      = document.getElementById('setupError');
+const createBtn       = document.getElementById('createBtn');
+const customCode      = document.getElementById('customCode');
+const reconnectBtn    = document.getElementById('reconnectBtn');
+const reconnectCode   = document.getElementById('reconnectCode');
+const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+const joinLinkInput   = document.getElementById('joinLinkInput');
+const copyLinkBtn     = document.getElementById('copyLinkBtn');
+const hostLinkInput   = document.getElementById('hostLinkInput');
+const copyHostLinkBtn = document.getElementById('copyHostLinkBtn');
+const playerCountPill = document.getElementById('playerCountPill');
+const roundPill       = document.getElementById('roundPill');
+const lockPill        = document.getElementById('lockPill');
+const lockBtn         = document.getElementById('lockBtn');
+const resetBtn        = document.getElementById('resetBtn');
+const buzzList        = document.getElementById('buzzList');
+const buzzCount       = document.getElementById('buzzCount');
+const emptyState      = document.getElementById('emptyState');
+const playerTags      = document.getElementById('playerTags');
+const playerListCount = document.getElementById('playerListCount');
+const playerEmptyState= document.getElementById('playerEmptyState');
+const downloadBtn     = document.getElementById('downloadBtn');
+const brandDot        = document.getElementById('brandDot');
+const brandTitle      = document.getElementById('brandTitle');
+const brandIcon       = document.getElementById('brandIcon');
 
-/* ══════════════════════════════════════════
-   TAB navigation
-══════════════════════════════════════════ */
+/* ══ 탭 ══ */
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -43,456 +40,423 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-/* ══════════════════════════════════════════
-   COLOR HELPERS
-══════════════════════════════════════════ */
-function hexToRgb(hex) {
-  const h = hex.replace('#','');
-  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
-}
-function rgbToHex(r,g,b) {
-  return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
-}
-function darken(hex,amt){ try{ const[r,g,b]=hexToRgb(hex); return rgbToHex(r*(1-amt),g*(1-amt),b*(1-amt)); }catch{return hex;} }
-function lighten(hex,amt){ try{ const[r,g,b]=hexToRgb(hex); return rgbToHex(r+(255-r)*amt,g+(255-g)*amt,b+(255-b)*amt); }catch{return hex;} }
+/* ══ 색상 헬퍼 ══ */
+function hexToRgb(hex){ const h=hex.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join(''); }
+function darken(hex,amt){ try{const[r,g,b]=hexToRgb(hex);return rgbToHex(r*(1-amt),g*(1-amt),b*(1-amt));}catch{return hex;} }
+function lighten(hex,amt){ try{const[r,g,b]=hexToRgb(hex);return rgbToHex(r+(255-r)*amt,g+(255-g)*amt,b+(255-b)*amt);}catch{return hex;} }
 
-/* ══════════════════════════════════════════
-   DESIGN SETTINGS
-══════════════════════════════════════════ */
+/* ══ 디자인 기본값 ══ */
 const DEFAULTS = {
   accent:      '#ff4655',
   bg:          '#11121c',
   surface:     '#1c1e2e',
   text:        '#f2f2f7',
+  logoText:    '#f2f2f7',   // 로고 텍스트 색상 (독립)
   cardOpacity: 100,
   shape:       'circle',
   buzzerText:  'BUZZ',
   title:       'QUIZ BUZZER',
   icon:        null,
   logo:        null,
-  bgImage:     null,
+  bgImagePc:   null,   // PC 배경
+  bgImageMobile: null, // 모바일 배경
 };
 
-function loadDesign() {
-  try {
-    const saved = localStorage.getItem('quizbuzz_design');
-    return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : { ...DEFAULTS };
-  } catch { return { ...DEFAULTS }; }
+function loadDesign(){
+  try{ const s=localStorage.getItem('quizbuzz_design'); return s?{...DEFAULTS,...JSON.parse(s)}:{...DEFAULTS}; }catch{return{...DEFAULTS};}
 }
-
-function saveDesign(d) {
-  try { localStorage.setItem('quizbuzz_design', JSON.stringify(d)); } catch(e) {
-    // localStorage 용량 초과 시 이미지 데이터 없이 저장
-    const slim = { ...d, logo: null, icon: null, bgImage: null };
-    try { localStorage.setItem('quizbuzz_design', JSON.stringify(slim)); } catch {}
+function saveDesign(d){
+  try{ localStorage.setItem('quizbuzz_design',JSON.stringify(d)); }catch(e){
+    const slim={...d,logo:null,icon:null,bgImagePc:null,bgImageMobile:null};
+    try{localStorage.setItem('quizbuzz_design',JSON.stringify(slim));}catch{}
   }
 }
 
-function applyDesign(d) {
-  if (!d) return;
-  const root = document.documentElement;
+function applyDesign(d){
+  if(!d)return;
+  const root=document.documentElement;
+  root.style.setProperty('--accent',d.accent);
+  root.style.setProperty('--accent-dim',darken(d.accent,0.25));
+  root.style.setProperty('--bg',d.bg);
+  root.style.setProperty('--surface',d.surface);
+  root.style.setProperty('--surface-2',lighten(d.surface,0.06));
+  root.style.setProperty('--text',d.text);
+  root.style.setProperty('--card-opacity',(d.cardOpacity??100)/100);
 
-  // 색상
-  root.style.setProperty('--accent',    d.accent);
-  root.style.setProperty('--accent-dim', darken(d.accent, 0.25));
-  root.style.setProperty('--bg',        d.bg);
-  root.style.setProperty('--surface',   d.surface);
-  root.style.setProperty('--surface-2', lighten(d.surface, 0.06));
-  root.style.setProperty('--text',      d.text);
+  // 배경 이미지 (PC/모바일 분기)
+  applyBgImage(d);
 
-  // 카드 투명도
-  const opacity = (d.cardOpacity !== undefined ? d.cardOpacity : 100) / 100;
-  root.style.setProperty('--card-opacity', opacity);
-
-  // 배경 이미지
-  if (d.bgImage) {
-    document.body.style.backgroundImage = `url(${d.bgImage})`;
-    document.body.style.backgroundSize  = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundAttachment = 'fixed';
+  // 브랜드 아이콘
+  if(d.icon){
+    brandIcon.innerHTML=`<img src="${d.icon}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
   } else {
-    document.body.style.backgroundImage = '';
+    brandIcon.innerHTML=`<span class="dot" id="brandDot" style="background:${d.accent};box-shadow:0 0 14px ${d.accent};"></span>`;
+  }
+  // 브랜드 타이틀
+  if(d.logo){
+    brandTitle.innerHTML=`<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
+  } else {
+    brandTitle.textContent=d.title||'QUIZ BUZZER';
+    brandTitle.style.color=d.logoText||d.text;
   }
 
-  // 브랜드 아이콘 (도형/이미지)
-  if (d.icon) {
-    brandIcon.innerHTML = `<img src="${d.icon}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
-  } else {
-    brandIcon.innerHTML = `<span class="dot" id="brandDot" style="background:${d.accent};box-shadow:0 0 14px ${d.accent};"></span>`;
-  }
-
-  // 브랜드 타이틀 & 로고
-  if (d.logo) {
-    brandTitle.innerHTML = `<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
-  } else {
-    brandTitle.textContent = d.title || 'QUIZ BUZZER';
-  }
-
-  // 미리보기 버저
   updatePreviewBuzzer(d);
 
-  // 폼 필드 동기화
-  document.getElementById('colorAccent').value         = d.accent;
-  document.getElementById('colorAccentHex').textContent = d.accent;
-  document.getElementById('colorBg').value             = d.bg;
-  document.getElementById('colorBgHex').textContent    = d.bg;
-  document.getElementById('colorSurface').value        = d.surface;
-  document.getElementById('colorSurfaceHex').textContent = d.surface;
-  document.getElementById('colorText').value           = d.text;
-  document.getElementById('colorTextHex').textContent  = d.text;
-  document.getElementById('siteTitle').value           = d.title || '';
-  document.getElementById('buzzerText').value          = d.buzzerText || 'BUZZ';
-  const opacityVal = d.cardOpacity !== undefined ? d.cardOpacity : 100;
-  document.getElementById('cardOpacity').value         = opacityVal;
-  document.getElementById('cardOpacityVal').textContent = opacityVal + '%';
+  // 폼 동기화
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  const setTxt=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('colorAccent',d.accent);   setTxt('colorAccentHex',d.accent);
+  set('colorBg',d.bg);           setTxt('colorBgHex',d.bg);
+  set('colorSurface',d.surface); setTxt('colorSurfaceHex',d.surface);
+  set('colorText',d.text);       setTxt('colorTextHex',d.text);
+  set('colorLogoText',d.logoText||d.text); setTxt('colorLogoTextHex',d.logoText||d.text);
+  set('siteTitle',d.title||'');
+  set('buzzerText',d.buzzerText||'BUZZ');
+  const opacity=d.cardOpacity??100;
+  set('cardOpacity',opacity); setTxt('cardOpacityVal',opacity+'%');
 
-  document.querySelectorAll('.shape-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.shape === d.shape)
-  );
+  document.querySelectorAll('.shape-btn').forEach(b=>b.classList.toggle('active',b.dataset.shape===d.shape));
 
   // 배경 미리보기
-  const bgPreview = document.getElementById('bgPreview');
-  if (d.bgImage) {
-    bgPreview.innerHTML = `<img src="${d.bgImage}" />`;
-  } else {
-    bgPreview.innerHTML = '<span>배경 이미지 없음</span>';
-  }
+  const bgPcEl=document.getElementById('bgPreviewPc');
+  if(bgPcEl) bgPcEl.innerHTML=d.bgImagePc?`<img src="${d.bgImagePc}" />`:'<span>PC 배경 이미지 없음</span>';
+  const bgMobEl=document.getElementById('bgPreviewMobile');
+  if(bgMobEl) bgMobEl.innerHTML=d.bgImageMobile?`<img src="${d.bgImageMobile}" />`:'<span>모바일 배경 이미지 없음</span>';
 
   // 로고 미리보기
-  const logoPreview = document.getElementById('logoPreview');
-  if (d.logo) {
-    logoPreview.innerHTML = `<img src="${d.logo}" style="max-height:60px;max-width:100%;object-fit:contain;" />`;
-  } else {
-    logoPreview.innerHTML = '<span>로고 이미지 없음</span>';
-  }
+  const lp=document.getElementById('logoPreview');
+  if(lp) lp.innerHTML=d.logo?`<img src="${d.logo}" style="max-height:60px;max-width:100%;object-fit:contain;" />`:'<span>로고 이미지 없음</span>';
 
   // 아이콘 미리보기
-  const iconPreview = document.getElementById('iconPreview');
-  if (d.icon) {
-    iconPreview.innerHTML = `<img src="${d.icon}" style="height:40px;width:40px;object-fit:contain;border-radius:8px;" /><span style="font-size:13px;color:var(--text-muted);">브랜드 앞에 표시됩니다</span>`;
+  const ip=document.getElementById('iconPreview');
+  if(ip) ip.innerHTML=d.icon
+    ?`<img src="${d.icon}" style="height:40px;width:40px;object-fit:contain;border-radius:8px;" /><span style="font-size:13px;color:var(--text-muted);">브랜드 앞에 표시됩니다</span>`
+    :'<span style="font-size:13px;color:var(--text-muted);">업로드하면 브랜드 이름 앞에 표시돼요</span>';
+}
+
+// PC/모바일 배경 분기 적용
+function applyBgImage(d){
+  const isMobile = window.innerWidth <= 768;
+  const img = isMobile ? (d.bgImageMobile || d.bgImagePc) : (d.bgImagePc || d.bgImageMobile);
+  if(img){
+    document.body.style.backgroundImage=`url(${img})`;
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundAttachment='fixed';
   } else {
-    iconPreview.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">업로드하면 브랜드 이름 앞에 표시돼요</span>';
+    document.body.style.backgroundImage='';
   }
 }
+window.addEventListener('resize', ()=>{ applyBgImage(loadDesign()); });
 
-function updatePreviewBuzzer(d) {
-  const pb = document.getElementById('previewBuzzer');
-  if (!pb) return;
-  const radiusMap = { circle:'50%', rounded:'24px', square:'8px' };
-  pb.style.background   = `radial-gradient(circle at 35% 30%, ${lighten(d.accent,0.15)} 0%, ${d.accent} 55%, ${darken(d.accent,0.2)} 100%)`;
-  pb.style.borderRadius = radiusMap[d.shape] || '50%';
-  pb.style.boxShadow    = `0 6px 0 ${darken(d.accent,0.25)}, 0 10px 20px ${d.accent}55`;
-  pb.textContent        = d.buzzerText || 'BUZZ';
+function updatePreviewBuzzer(d){
+  const pb=document.getElementById('previewBuzzer');
+  if(!pb)return;
+  const m={circle:'50%',rounded:'24px',square:'8px'};
+  pb.style.background=`radial-gradient(circle at 35% 30%, ${lighten(d.accent,0.15)} 0%, ${d.accent} 55%, ${darken(d.accent,0.2)} 100%)`;
+  pb.style.borderRadius=m[d.shape]||'50%';
+  pb.style.boxShadow=`0 6px 0 ${darken(d.accent,0.25)}, 0 10px 20px ${d.accent}55`;
+  pb.textContent=d.buzzerText||'BUZZ';
 }
 
-// 투명도 슬라이더 실시간 반영
-document.getElementById('cardOpacity').addEventListener('input', e => {
-  document.getElementById('cardOpacityVal').textContent = e.target.value + '%';
-  const opacity = e.target.value / 100;
-  document.documentElement.style.setProperty('--card-opacity', opacity);
-});
-
-// 색상 피커 실시간 반영
-['colorAccent','colorBg','colorSurface','colorText'].forEach(id => {
-  document.getElementById(id).addEventListener('input', e => {
-    document.getElementById(id+'Hex').textContent = e.target.value;
+// 색상 피커 실시간
+['colorAccent','colorBg','colorSurface','colorText','colorLogoText'].forEach(id=>{
+  const el=document.getElementById(id); if(!el)return;
+  el.addEventListener('input',e=>{
+    document.getElementById(id+'Hex').textContent=e.target.value;
     applyDesign(collectFormDesign());
   });
 });
 
-// 버저 텍스트 실시간 반영
-document.getElementById('buzzerText').addEventListener('input', () => {
-  updatePreviewBuzzer(collectFormDesign());
+// 투명도 슬라이더
+document.getElementById('cardOpacity').addEventListener('input',e=>{
+  document.getElementById('cardOpacityVal').textContent=e.target.value+'%';
+  document.documentElement.style.setProperty('--card-opacity',e.target.value/100);
 });
 
-// 버저 모양 버튼
-document.querySelectorAll('.shape-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+// 버저 텍스트
+document.getElementById('buzzerText').addEventListener('input',()=>updatePreviewBuzzer(collectFormDesign()));
+
+// 버저 모양
+document.querySelectorAll('.shape-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     updatePreviewBuzzer(collectFormDesign());
   });
 });
 
 // 파일 업로드 헬퍼
-function handleFileInput(inputId, onLoad) {
-  document.getElementById(inputId).addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => onLoad(ev.target.result);
-    reader.readAsDataURL(file);
+function handleFile(inputId, onLoad){
+  document.getElementById(inputId).addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>onLoad(ev.target.result);
+    r.readAsDataURL(f);
   });
 }
 
-// 배경 이미지
-handleFileInput('bgFile', dataUrl => {
-  const bgPreview = document.getElementById('bgPreview');
-  bgPreview.innerHTML = `<img src="${dataUrl}" />`;
-  document.getElementById('bgFile').dataset.dataUrl = dataUrl;
-  document.body.style.backgroundImage = `url(${dataUrl})`;
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundAttachment = 'fixed';
+// PC 배경
+handleFile('bgFilePc', url=>{
+  document.getElementById('bgPreviewPc').innerHTML=`<img src="${url}" />`;
+  document.getElementById('bgFilePc').dataset.dataUrl=url;
+  document.body.style.backgroundImage=`url(${url})`;
+  document.body.style.backgroundSize='cover';
+  document.body.style.backgroundPosition='center';
+  document.body.style.backgroundAttachment='fixed';
 });
-document.getElementById('bgRemoveBtn').addEventListener('click', () => {
-  document.getElementById('bgPreview').innerHTML = '<span>배경 이미지 없음</span>';
-  document.getElementById('bgFile').value = '';
-  delete document.getElementById('bgFile').dataset.dataUrl;
-  document.body.style.backgroundImage = '';
+document.getElementById('bgRemovePcBtn').addEventListener('click',()=>{
+  document.getElementById('bgPreviewPc').innerHTML='<span>PC 배경 이미지 없음</span>';
+  document.getElementById('bgFilePc').value='';
+  delete document.getElementById('bgFilePc').dataset.dataUrl;
+  applyBgImage(collectFormDesign());
 });
 
-// 로고 이미지 (텍스트 대신)
-handleFileInput('logoFile', dataUrl => {
-  const logoPreview = document.getElementById('logoPreview');
-  logoPreview.innerHTML = `<img src="${dataUrl}" style="max-height:60px;max-width:100%;object-fit:contain;" />`;
-  document.getElementById('logoFile').dataset.dataUrl = dataUrl;
-  // 즉시 브랜드에 반영
-  brandTitle.innerHTML = `<img src="${dataUrl}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
+// 모바일 배경
+handleFile('bgFileMobile', url=>{
+  document.getElementById('bgPreviewMobile').innerHTML=`<img src="${url}" />`;
+  document.getElementById('bgFileMobile').dataset.dataUrl=url;
+  if(window.innerWidth<=768){
+    document.body.style.backgroundImage=`url(${url})`;
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='center';
+    document.body.style.backgroundAttachment='fixed';
+  }
 });
-document.getElementById('logoRemoveBtn').addEventListener('click', () => {
-  document.getElementById('logoPreview').innerHTML = '<span>로고 이미지 없음</span>';
-  document.getElementById('logoFile').value = '';
+document.getElementById('bgRemoveMobileBtn').addEventListener('click',()=>{
+  document.getElementById('bgPreviewMobile').innerHTML='<span>모바일 배경 이미지 없음</span>';
+  document.getElementById('bgFileMobile').value='';
+  delete document.getElementById('bgFileMobile').dataset.dataUrl;
+  applyBgImage(collectFormDesign());
+});
+
+// 로고
+handleFile('logoFile', url=>{
+  document.getElementById('logoPreview').innerHTML=`<img src="${url}" style="max-height:60px;max-width:100%;object-fit:contain;" />`;
+  document.getElementById('logoFile').dataset.dataUrl=url;
+  brandTitle.innerHTML=`<img src="${url}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
+});
+document.getElementById('logoRemoveBtn').addEventListener('click',()=>{
+  document.getElementById('logoPreview').innerHTML='<span>로고 이미지 없음</span>';
+  document.getElementById('logoFile').value='';
   delete document.getElementById('logoFile').dataset.dataUrl;
-  brandTitle.textContent = document.getElementById('siteTitle').value || 'QUIZ BUZZER';
+  brandTitle.textContent=document.getElementById('siteTitle').value||'QUIZ BUZZER';
 });
 
-// 아이콘 이미지 (브랜드 앞 도형)
-handleFileInput('iconFile', dataUrl => {
-  const iconPreview = document.getElementById('iconPreview');
-  iconPreview.innerHTML = `<img src="${dataUrl}" style="height:40px;width:40px;object-fit:contain;border-radius:8px;" /><span style="font-size:13px;color:var(--text-muted);">브랜드 앞에 표시됩니다</span>`;
-  document.getElementById('iconFile').dataset.dataUrl = dataUrl;
-  brandIcon.innerHTML = `<img src="${dataUrl}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
+// 아이콘
+handleFile('iconFile', url=>{
+  document.getElementById('iconPreview').innerHTML=`<img src="${url}" style="height:40px;width:40px;object-fit:contain;border-radius:8px;" /><span style="font-size:13px;color:var(--text-muted);">브랜드 앞에 표시됩니다</span>`;
+  document.getElementById('iconFile').dataset.dataUrl=url;
+  brandIcon.innerHTML=`<img src="${url}" style="height:24px;width:24px;object-fit:contain;vertical-align:middle;" />`;
 });
-document.getElementById('iconRemoveBtn').addEventListener('click', () => {
-  const iconPreview = document.getElementById('iconPreview');
-  iconPreview.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">업로드하면 브랜드 이름 앞에 표시돼요</span>';
-  document.getElementById('iconFile').value = '';
+document.getElementById('iconRemoveBtn').addEventListener('click',()=>{
+  document.getElementById('iconPreview').innerHTML='<span style="font-size:13px;color:var(--text-muted);">업로드하면 브랜드 이름 앞에 표시돼요</span>';
+  document.getElementById('iconFile').value='';
   delete document.getElementById('iconFile').dataset.dataUrl;
-  const accent = document.getElementById('colorAccent').value;
-  brandIcon.innerHTML = `<span class="dot" style="background:${accent};box-shadow:0 0 14px ${accent};"></span>`;
+  const acc=document.getElementById('colorAccent').value;
+  brandIcon.innerHTML=`<span class="dot" style="background:${acc};box-shadow:0 0 14px ${acc};"></span>`;
 });
 
-function collectFormDesign() {
-  const activeShape = document.querySelector('.shape-btn.active');
-  const get = id => document.getElementById(id).dataset.dataUrl || null;
-  const existingLogo = document.querySelector('#logoPreview img');
-  const existingIcon = document.querySelector('#iconPreview img');
-  const existingBg   = document.querySelector('#bgPreview img');
+function getFileUrl(id, previewSelector){
+  const el=document.getElementById(id);
+  if(el.dataset.dataUrl) return el.dataset.dataUrl;
+  const img=document.querySelector(previewSelector);
+  return img?img.src:null;
+}
+
+function collectFormDesign(){
+  const activeShape=document.querySelector('.shape-btn.active');
   return {
-    accent:     document.getElementById('colorAccent').value,
-    bg:         document.getElementById('colorBg').value,
-    surface:    document.getElementById('colorSurface').value,
-    text:       document.getElementById('colorText').value,
-    cardOpacity: parseInt(document.getElementById('cardOpacity').value, 10),
-    shape:      activeShape ? activeShape.dataset.shape : 'circle',
-    buzzerText: document.getElementById('buzzerText').value.trim() || 'BUZZ',
-    title:      document.getElementById('siteTitle').value.trim() || 'QUIZ BUZZER',
-    logo:       get('logoFile') || (existingLogo ? existingLogo.src : null),
-    icon:       get('iconFile') || (existingIcon ? existingIcon.src : null),
-    bgImage:    get('bgFile')   || (existingBg   ? existingBg.src   : null),
+    accent:       document.getElementById('colorAccent').value,
+    bg:           document.getElementById('colorBg').value,
+    surface:      document.getElementById('colorSurface').value,
+    text:         document.getElementById('colorText').value,
+    logoText:     document.getElementById('colorLogoText').value,
+    cardOpacity:  parseInt(document.getElementById('cardOpacity').value,10),
+    shape:        activeShape?activeShape.dataset.shape:'circle',
+    buzzerText:   document.getElementById('buzzerText').value.trim()||'BUZZ',
+    title:        document.getElementById('siteTitle').value.trim()||'QUIZ BUZZER',
+    logo:         getFileUrl('logoFile','#logoPreview img'),
+    icon:         getFileUrl('iconFile','#iconPreview img'),
+    bgImagePc:    getFileUrl('bgFilePc','#bgPreviewPc img'),
+    bgImageMobile:getFileUrl('bgFileMobile','#bgPreviewMobile img'),
   };
 }
 
-// 저장 버튼
-document.getElementById('saveDesignBtn').addEventListener('click', () => {
-  const d = collectFormDesign();
+// 저장
+document.getElementById('saveDesignBtn').addEventListener('click',()=>{
+  const d=collectFormDesign();
   saveDesign(d);
   applyDesign(d);
-  socket.emit('designUpdate', d);
-  const btn = document.getElementById('saveDesignBtn');
-  btn.textContent = '✅ 저장됨!';
-  setTimeout(() => { btn.textContent = '💾 설정 저장 및 적용'; }, 2000);
+  socket.emit('designUpdate',d);
+  const btn=document.getElementById('saveDesignBtn');
+  btn.textContent='✅ 저장됨!';
+  setTimeout(()=>{btn.textContent='💾 설정 저장 및 적용';},2000);
 });
 
-// 초기화 버튼
-document.getElementById('resetDesignBtn').addEventListener('click', () => {
-  if (!confirm('기본값으로 초기화할까요?')) return;
-  // 파일 입력 초기화
-  ['bgFile','logoFile','iconFile'].forEach(id => {
-    const el = document.getElementById(id);
-    el.value = '';
-    delete el.dataset.dataUrl;
+// 초기화
+document.getElementById('resetDesignBtn').addEventListener('click',()=>{
+  if(!confirm('기본값으로 초기화할까요?'))return;
+  ['bgFilePc','bgFileMobile','logoFile','iconFile'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.value='';delete el.dataset.dataUrl;}
   });
   saveDesign(DEFAULTS);
   applyDesign(DEFAULTS);
-  socket.emit('designUpdate', DEFAULTS);
+  socket.emit('designUpdate',DEFAULTS);
 });
 
-// 페이지 로드 시 저장된 디자인 적용
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded',()=>{
   applyDesign(loadDesign());
-  try {
-    const saved = localStorage.getItem('quizbuzz_host_code');
-    if (saved) reconnectCode.value = saved;
-  } catch {}
+  try{const s=localStorage.getItem('quizbuzz_host_code');if(s)reconnectCode.value=s;}catch{}
 });
 
-/* ══════════════════════════════════════════
-   ROOM LIST (방 관리 탭)
-══════════════════════════════════════════ */
-const roomListEl    = document.getElementById('roomList');
-const roomEmptyState= document.getElementById('roomEmptyState');
+/* ══ 방 관리 탭 ══ */
+const roomListEl     = document.getElementById('roomList');
+const roomEmptyState = document.getElementById('roomEmptyState');
 const refreshRoomsBtn= document.getElementById('refreshRoomsBtn');
+refreshRoomsBtn.addEventListener('click',()=>socket.emit('getRoomList'));
 
-refreshRoomsBtn.addEventListener('click', () => socket.emit('getRoomList'));
-
-socket.on('roomList', (list) => {
-  if (!list || list.length === 0) {
-    roomListEl.innerHTML = '';
-    roomEmptyState.style.display = 'block';
-    return;
-  }
-  roomEmptyState.style.display = 'none';
-  roomListEl.innerHTML = list.map(r => {
-    const created = new Date(r.createdAt).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const isCurrent = r.code === currentCode;
-    return `<li class="buzz-item" style="${isCurrent ? 'border-color:var(--gold);' : ''}">
+socket.on('roomList',(list)=>{
+  if(!list||list.length===0){roomListEl.innerHTML='';roomEmptyState.style.display='block';return;}
+  roomEmptyState.style.display='none';
+  roomListEl.innerHTML=list.map(r=>{
+    const created=new Date(r.createdAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const isCurrent=r.code===currentCode;
+    return `<li class="buzz-item" style="${isCurrent?'border-color:var(--gold);':''}">
       <div class="buzz-info">
-        <div class="buzz-nickname" style="font-size:20px;letter-spacing:3px;">${escapeHtml(r.code)}${isCurrent ? ' <span style="font-size:12px;color:var(--gold);">현재 방</span>' : ''}</div>
-        <div class="buzz-answer">참가자 ${r.playerCount}명 · 라운드 ${r.round} · 생성: ${created} · ${r.locked ? '🔒 잠김' : '🟢 활성화'}</div>
+        <div class="buzz-nickname" style="font-size:18px;letter-spacing:3px;">${escapeHtml(r.code)}${isCurrent?' <span style="font-size:12px;color:var(--gold);">현재 방</span>':''}</div>
+        <div class="buzz-answer">참가자 ${r.playerCount}명 · 라운드 ${r.round} · 생성: ${created} · ${r.locked?'🔒 잠김':'🟢 활성화'}</div>
       </div>
-      ${!isCurrent ? `<button class="buzz-remove" style="color:var(--accent);font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--accent);background:transparent;cursor:pointer;white-space:nowrap;" data-code="${escapeHtml(r.code)}">삭제</button>` : ''}
+      ${!isCurrent?`<button class="buzz-remove" style="color:var(--accent);font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--accent);background:transparent;cursor:pointer;white-space:nowrap;" data-code="${escapeHtml(r.code)}">삭제</button>`:''}
     </li>`;
   }).join('');
-
-  roomListEl.querySelectorAll('[data-code]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const code = btn.dataset.code;
-      if (confirm(`"${code}" 방을 삭제하면 해당 방의 참가자가 모두 퇴장됩니다. 계속할까요?`)) {
-        socket.emit('deleteRoom', { code });
-      }
+  roomListEl.querySelectorAll('[data-code]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(confirm(`"${btn.dataset.code}" 방을 삭제할까요? 해당 방 참가자가 모두 퇴장됩니다.`))
+        socket.emit('deleteRoom',{code:btn.dataset.code});
     });
   });
 });
 
-/* ══════════════════════════════════════════
-   ROOM SETUP
-══════════════════════════════════════════ */
-let currentCode = null;
+/* ══ 방 만들기 ══ */
+let currentCode=null;
 
-function showHostPanel(code) {
-  currentCode = code;
-  roomCodeDisplay.textContent = code;
-  setupCard.style.display = 'none';
-  hostPanel.style.display = 'block';
-  try { localStorage.setItem('quizbuzz_host_code', code); } catch {}
+function showHostPanel(code){
+  currentCode=code;
+  roomCodeDisplay.textContent=code;
+  setupCard.style.display='none';
+  hostPanel.style.display='block';
+  try{localStorage.setItem('quizbuzz_host_code',code);}catch{}
 
-  const joinUrl = `${location.origin}/player.html?code=${code}`;
-  joinLinkInput.value = joinUrl;
-  downloadBtn.href = `/export/${code}`;
+  const joinUrl=`${location.origin}/join?code=${code}`;
+  joinLinkInput.value=joinUrl;
+  downloadBtn.href=`/export/${code}`;
   downloadBtn.removeAttribute('download');
 
-  function tryQR() {
-    if (window.QRCode) {
-      qrCanvas.width = 180; qrCanvas.height = 180;
-      QRCode.toCanvas(qrCanvas, joinUrl, { width:180, margin:2, color:{ dark:'#000000', light:'#ffffff' } }, err => {
-        if (err) console.error('QR error:', err);
-      });
-    } else { setTimeout(tryQR, 200); }
-  }
-  tryQR();
+  // 호스트 관리 링크
+  const hostUrl=`${location.origin}/host.html?hostcode=${code}`;
+  hostLinkInput.value=hostUrl;
 
-  socket.emit('designUpdate', loadDesign());
+  socket.emit('designUpdate',loadDesign());
 }
 
-copyLinkBtn.addEventListener('click', () => {
-  navigator.clipboard.writeText(joinLinkInput.value).then(() => {
-    copyLinkBtn.textContent = '복사됨!';
-    setTimeout(() => { copyLinkBtn.textContent = '복사'; }, 2000);
+// 링크 복사
+function makeCopy(inputId, btnId){
+  document.getElementById(btnId).addEventListener('click',()=>{
+    navigator.clipboard.writeText(document.getElementById(inputId).value).then(()=>{
+      const btn=document.getElementById(btnId);
+      btn.textContent='복사됨!';
+      setTimeout(()=>{btn.textContent='복사';},2000);
+    });
   });
-});
-joinLinkInput.addEventListener('click', () => joinLinkInput.select());
+  document.getElementById(inputId).addEventListener('click',()=>document.getElementById(inputId).select());
+}
+makeCopy('joinLinkInput','copyLinkBtn');
+makeCopy('hostLinkInput','copyHostLinkBtn');
 
-createBtn.addEventListener('click', () => {
-  createError.textContent = '';
-  const code = customCode.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-  socket.emit('createRoom', { customCode: code });
+createBtn.addEventListener('click',()=>{
+  createError.textContent='';
+  const code=customCode.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  socket.emit('createRoom',{customCode:code});
 });
-customCode.addEventListener('keydown', e => { if (e.key === 'Enter') createBtn.click(); });
+customCode.addEventListener('keydown',e=>{if(e.key==='Enter')createBtn.click();});
 
-reconnectBtn.addEventListener('click', () => {
-  const code = reconnectCode.value.trim().toUpperCase();
-  if (!code) { setupError.textContent = '코드를 입력해주세요.'; return; }
-  setupError.textContent = '';
-  socket.emit('hostReconnect', { code });
-});
-
-socket.on('roomCreated', ({ code }) => showHostPanel(code));
-socket.on('roomCreateError', ({ error }) => { createError.textContent = error; });
-socket.on('hostReconnectResult', res => {
-  if (res.success) showHostPanel(res.code);
-  else setupError.textContent = res.error || '방을 찾을 수 없습니다.';
+reconnectBtn.addEventListener('click',()=>{
+  const code=reconnectCode.value.trim().toUpperCase();
+  if(!code){setupError.textContent='코드를 입력해주세요.';return;}
+  setupError.textContent='';
+  socket.emit('hostReconnect',{code});
 });
 
-/* ══════════════════════════════════════════
-   PLAYERS
-══════════════════════════════════════════ */
-socket.on('playerListUpdate', ({ players, count }) => {
-  playerCountPill.textContent = `참가자 ${count}명`;
-  playerListCount.textContent = count;
-  if (!players || players.length === 0) {
-    playerTags.innerHTML = '';
-    playerEmptyState.style.display = 'block';
-    return;
+// URL ?hostcode= 파라미터로 자동 재접속
+window.addEventListener('DOMContentLoaded',()=>{
+  const params=new URLSearchParams(location.search);
+  const hc=params.get('hostcode');
+  if(hc){
+    reconnectCode.value=hc.toUpperCase();
+    socket.emit('hostReconnect',{code:hc.toUpperCase()});
   }
-  playerEmptyState.style.display = 'none';
-  playerTags.innerHTML = players.map(name => `
+});
+
+socket.on('roomCreated',({code})=>showHostPanel(code));
+socket.on('roomCreateError',({error})=>{createError.textContent=error;});
+socket.on('hostReconnectResult',res=>{
+  if(res.success)showHostPanel(res.code);
+  else setupError.textContent=res.error||'방을 찾을 수 없습니다.';
+});
+
+/* ══ 참가자 ══ */
+socket.on('playerListUpdate',({players,count})=>{
+  playerCountPill.textContent=`참가자 ${count}명`;
+  playerListCount.textContent=count;
+  if(!players||players.length===0){playerTags.innerHTML='';playerEmptyState.style.display='block';return;}
+  playerEmptyState.style.display='none';
+  playerTags.innerHTML=players.map(name=>`
     <div class="player-tag">
       <span>${escapeHtml(name)}</span>
       <button class="player-kick" title="내쫓기" data-name="${escapeHtml(name)}">✕</button>
     </div>`).join('');
-  playerTags.querySelectorAll('.player-kick').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm(`${btn.dataset.name} 님을 방에서 내보낼까요?`))
-        socket.emit('kickPlayer', { nickname: btn.dataset.name });
+  playerTags.querySelectorAll('.player-kick').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(confirm(`${btn.dataset.name} 님을 방에서 내보낼까요?`))
+        socket.emit('kickPlayer',{nickname:btn.dataset.name});
     });
   });
 });
 
-socket.on('roundUpdate', ({ round }) => { roundPill.textContent = `라운드 ${round}`; });
+socket.on('roundUpdate',({round})=>{roundPill.textContent=`라운드 ${round}`;});
 
-/* ══════════════════════════════════════════
-   LOCK / RESET
-══════════════════════════════════════════ */
-lockBtn.addEventListener('click', () => socket.emit('toggleLock'));
-socket.on('lockUpdate', ({ locked }) => {
-  if (locked) {
-    lockPill.textContent = '버저 잠김'; lockPill.className = 'pill locked'; lockBtn.textContent = '버저 열기';
-  } else {
-    lockPill.textContent = '버저 활성화됨'; lockPill.className = 'pill unlocked'; lockBtn.textContent = '버저 잠그기';
-  }
+/* ══ 잠금/초기화 ══ */
+lockBtn.addEventListener('click',()=>socket.emit('toggleLock'));
+socket.on('lockUpdate',({locked})=>{
+  if(locked){lockPill.textContent='버저 잠김';lockPill.className='pill locked';lockBtn.textContent='버저 열기';}
+  else{lockPill.textContent='버저 활성화됨';lockPill.className='pill unlocked';lockBtn.textContent='버저 잠그기';}
 });
-resetBtn.addEventListener('click', () => socket.emit('resetBuzzes'));
+resetBtn.addEventListener('click',()=>socket.emit('resetBuzzes'));
 
-/* ══════════════════════════════════════════
-   BUZZ LIST
-══════════════════════════════════════════ */
-socket.on('buzzUpdate', ({ buzzes }) => {
-  buzzCount.textContent = buzzes.length;
-  if (buzzes.length === 0) { buzzList.innerHTML = ''; emptyState.style.display = 'block'; return; }
-  emptyState.style.display = 'none';
-  buzzList.innerHTML = buzzes.map((b, idx) => {
-    const timeStr = new Date(b.time).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    const answer = b.answer ? escapeHtml(b.answer) : '<span style="opacity:0.5;">(답안 미입력)</span>';
+/* ══ 버저 목록 ══ */
+socket.on('buzzUpdate',({buzzes})=>{
+  buzzCount.textContent=buzzes.length;
+  if(buzzes.length===0){buzzList.innerHTML='';emptyState.style.display='block';return;}
+  emptyState.style.display='none';
+  buzzList.innerHTML=buzzes.map((b,idx)=>{
+    const t=new Date(b.time).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const ans=b.answer?escapeHtml(b.answer):'<span style="opacity:0.5;">(답안 미입력)</span>';
     return `<li class="buzz-item">
       <div class="buzz-rank">${b.order}</div>
       <div class="buzz-info">
         <div class="buzz-nickname">${escapeHtml(b.nickname)}</div>
-        <div class="buzz-answer">${answer}</div>
+        <div class="buzz-answer">${ans}</div>
       </div>
-      <div class="buzz-time">${timeStr}</div>
+      <div class="buzz-time">${t}</div>
       <button class="buzz-remove" title="삭제" data-idx="${idx}">✕</button>
     </li>`;
   }).join('');
-  buzzList.querySelectorAll('.buzz-remove').forEach(btn => {
-    btn.addEventListener('click', () => socket.emit('removeBuzz', { index: parseInt(btn.dataset.idx, 10) }));
+  buzzList.querySelectorAll('.buzz-remove').forEach(btn=>{
+    btn.addEventListener('click',()=>socket.emit('removeBuzz',{index:parseInt(btn.dataset.idx,10)}));
   });
 });
 
-/* ══════════════════════════════════════════
-   UTIL
-══════════════════════════════════════════ */
-function escapeHtml(str) {
-  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
-}
+function escapeHtml(str){const d=document.createElement('div');d.textContent=str;return d.innerHTML;}

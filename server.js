@@ -6,15 +6,43 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// 500명 이상 동시 접속 대비 설정
+// 700명 이상 동시 접속 대비 설정
 const io = new Server(server, {
   pingTimeout: 60000,
   pingInterval: 25000,
   transports: ['websocket', 'polling'],
   maxHttpBufferSize: 5e6,
+  // polling 연결 압축으로 트래픽 절감
+  httpCompression: { threshold: 1024 },
+  perMessageDeflate: { threshold: 1024 },
+  // 연결 당 이벤트 처리량 제한 (QR 동시 진입 spike 대응)
+  connectTimeout: 10000,
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+// 정적 파일 캐시 헤더 (QR 동시 진입 시 중복 다운로드 방지)
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '5m',
+  etag: true,
+  lastModified: true,
+}));
+
+// QR 진입 전용 경량 리다이렉트 엔드포인트 (/join?code=XXXX)
+// 실제 파일 대신 이 경로로 QR을 만들면 트래픽을 분산할 수 있음
+app.get('/join', (req, res) => {
+  const code = (req.query.code || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if (!code) { res.redirect('/player.html'); return; }
+  // 301 캐시 가능 리다이렉트로 브라우저가 다음엔 직접 이동
+  res.set('Cache-Control', 'public, max-age=300');
+  res.redirect(301, `/player.html?code=${code}`);
+});
+
+// 연결 수 모니터링 (로그)
+let peakConnections = 0;
+setInterval(() => {
+  const count = io.sockets.sockets.size;
+  if (count > peakConnections) peakConnections = count;
+  if (count > 0) console.log(`[연결] 현재: ${count}명 / 최고: ${peakConnections}명`);
+}, 30000);
 
 // rooms: Map<roomCode, { hostSocketId, players, buzzes, history, round, locked, design, createdAt }>
 const rooms = new Map();

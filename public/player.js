@@ -211,19 +211,22 @@ function applyDesign(d) {
   if (d.bg)      root.style.setProperty('--bg',d.bg);
   if (d.surface) { root.style.setProperty('--surface',d.surface); root.style.setProperty('--surface-2',lighten(d.surface,0.06)); }
   if (d.text)    root.style.setProperty('--text',d.text);
+  if (d.cardOpacity !== undefined) root.style.setProperty('--card-opacity', d.cardOpacity / 100);
 
-  // 카드 투명도
-  if (d.cardOpacity !== undefined) {
-    root.style.setProperty('--card-opacity', d.cardOpacity / 100);
+  // 배경 이미지 - PC/모바일 분기 (bgImagePc/bgImageMobile 우선, 없으면 bgImage 폴백)
+  const isMobile = window.innerWidth <= 768;
+  const bgImg = isMobile
+    ? (d.bgImageMobile || d.bgImagePc || d.bgImage || null)
+    : (d.bgImagePc || d.bgImageMobile || d.bgImage || null);
+
+  if (bgImg) {
+    document.body.style.backgroundImage = `url(${bgImg})`;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+  } else {
+    document.body.style.backgroundImage = '';
   }
-
-  // 배경 이미지
-  if (d.bgImage) {
-    document.body.style.backgroundImage=`url(${d.bgImage})`;
-    document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
-  } else { document.body.style.backgroundImage=''; }
 
   // 브랜드 영역 재구성 (원 도형 없이)
   const brand = document.querySelector('.brand');
@@ -240,6 +243,7 @@ function applyDesign(d) {
       titleEl.innerHTML = `<img src="${d.logo}" style="height:28px;object-fit:contain;vertical-align:middle;" alt="로고" />`;
     } else {
       titleEl.textContent = d.title || 'QUIZ BUZZER';
+      titleEl.style.color = d.logoText || d.text || '#f2f2f7';
     }
     brand.appendChild(titleEl);
   }
@@ -256,6 +260,11 @@ function applyDesign(d) {
   }
 }
 socket.on('designUpdate', applyDesign);
+
+// 화면 크기 변경 시 배경 이미지 재적용 (PC↔모바일 전환)
+let lastDesign = null;
+socket.on('designUpdate', d => { lastDesign = d; });
+window.addEventListener('resize', () => { if (lastDesign) applyDesign(lastDesign); });
 
 // ── 페이지 로드 시 브랜드 원 도형 제거 (디자인 설정 전 기본 상태) ──
 window.addEventListener('DOMContentLoaded', () => {
