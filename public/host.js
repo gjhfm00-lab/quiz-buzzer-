@@ -48,19 +48,21 @@ function lighten(hex,amt){ try{const[r,g,b]=hexToRgb(hex);return rgbToHex(r+(255
 
 /* ══ 디자인 기본값 ══ */
 const DEFAULTS = {
-  accent:      '#ff4655',
-  bg:          '#11121c',
-  surface:     '#1c1e2e',
-  text:        '#f2f2f7',
-  logoText:    '#f2f2f7',   // 로고 텍스트 색상 (독립)
-  cardOpacity: 100,
-  shape:       'circle',
-  buzzerText:  'BUZZ',
-  title:       'QUIZ BUZZER',
-  icon:        null,
-  logo:        null,
-  bgImagePc:   null,   // PC 배경
-  bgImageMobile: null, // 모바일 배경
+  accent:        '#ff4655',
+  bg:            '#11121c',
+  surface:       '#1c1e2e',
+  text:          '#f2f2f7',
+  logoText:      '#f2f2f7',
+  cardOpacity:   100,
+  shape:         'circle',
+  buzzerText:    'BUZZ',
+  title:         'QUIZ BUZZER',
+  icon:          null,
+  logo:          null,
+  bgImagePc:     null,
+  bgImageMobile: null,
+  bgColorPc:     '',
+  bgColorMobile: '',
 };
 
 function loadDesign(){
@@ -139,12 +141,15 @@ function applyDesign(d){
 function applyBgImage(d){
   const isMobile = window.innerWidth <= 768;
   const img = isMobile ? (d.bgImageMobile || d.bgImagePc) : (d.bgImagePc || d.bgImageMobile);
+  // 현재 화면에 맞는 bgColor 선택
+  const bgColor = isMobile ? (d.bgColorMobile || d.bgColorPc || d.bgColor || '') : (d.bgColorPc || d.bgColor || '');
   if(img){
     document.body.style.backgroundImage=`url(${img})`;
     document.body.style.backgroundSize='cover';
     document.body.style.backgroundPosition='top center';
     document.body.style.backgroundRepeat='no-repeat';
     document.body.style.backgroundAttachment= isMobile ? 'scroll' : 'fixed';
+    document.body.style.backgroundColor = bgColor || '';
     if(isMobile){
       document.documentElement.style.minHeight='100%';
       document.body.style.minHeight='100vh';
@@ -152,6 +157,7 @@ function applyBgImage(d){
   } else {
     document.body.style.backgroundImage='';
     document.body.style.backgroundAttachment='';
+    document.body.style.backgroundColor = bgColor || '';
   }
 }
 window.addEventListener('resize', ()=>{ applyBgImage(loadDesign()); });
@@ -193,6 +199,28 @@ document.querySelectorAll('.shape-btn').forEach(btn=>{
   });
 });
 
+// 이미지 하단 평균 색상 추출 → background-color에 적용
+function extractBottomColor(dataUrl, callback) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    // 하단 10px 영역만 샘플링 (속도 최적화)
+    const sampleH = Math.min(10, img.height);
+    canvas.width = Math.min(img.width, 100); // 가로는 최대 100px만
+    canvas.height = sampleH;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, img.height - sampleH, img.width, sampleH, 0, 0, canvas.width, sampleH);
+    const data = ctx.getImageData(0, 0, canvas.width, sampleH).data;
+    let r=0, g=0, b=0, count=0;
+    for (let i=0; i<data.length; i+=4) {
+      r+=data[i]; g+=data[i+1]; b+=data[i+2]; count++;
+    }
+    r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count);
+    callback(`rgb(${r},${g},${b})`);
+  };
+  img.src = dataUrl;
+}
+
 // 파일 업로드 헬퍼
 function handleFile(inputId, onLoad){
   document.getElementById(inputId).addEventListener('change',e=>{
@@ -207,19 +235,23 @@ function handleFile(inputId, onLoad){
 handleFile('bgFilePc', url=>{
   document.getElementById('bgPreviewPc').innerHTML=`<img src="${url}" />`;
   document.getElementById('bgFilePc').dataset.dataUrl=url;
-  // PC에서 즉시 미리보기 (호스트는 보통 PC)
   if(window.innerWidth > 768){
     document.body.style.backgroundImage=`url(${url})`;
     document.body.style.backgroundSize='cover';
     document.body.style.backgroundPosition='top center';
     document.body.style.backgroundRepeat='no-repeat';
     document.body.style.backgroundAttachment='fixed';
+    extractBottomColor(url, color=>{
+      document.body.style.backgroundColor=color;
+      document.getElementById('bgFilePc').dataset.bgColor=color;
+    });
   }
 });
 document.getElementById('bgRemovePcBtn').addEventListener('click',()=>{
   document.getElementById('bgPreviewPc').innerHTML='<span>PC 배경 이미지 없음</span>';
-  document.getElementById('bgFilePc').value='';
-  delete document.getElementById('bgFilePc').dataset.dataUrl;
+  const el=document.getElementById('bgFilePc');
+  el.value=''; delete el.dataset.dataUrl; delete el.dataset.bgColor;
+  document.body.style.backgroundColor='';
   applyBgImage(collectFormDesign());
 });
 
@@ -235,12 +267,17 @@ handleFile('bgFileMobile', url=>{
     document.body.style.backgroundAttachment='scroll';
     document.documentElement.style.minHeight='100%';
     document.body.style.minHeight='100vh';
+    extractBottomColor(url, color=>{
+      document.body.style.backgroundColor=color;
+      document.getElementById('bgFileMobile').dataset.bgColor=color;
+    });
   }
 });
 document.getElementById('bgRemoveMobileBtn').addEventListener('click',()=>{
   document.getElementById('bgPreviewMobile').innerHTML='<span>모바일 배경 이미지 없음</span>';
-  document.getElementById('bgFileMobile').value='';
-  delete document.getElementById('bgFileMobile').dataset.dataUrl;
+  const el=document.getElementById('bgFileMobile');
+  el.value=''; delete el.dataset.dataUrl; delete el.dataset.bgColor;
+  document.body.style.backgroundColor='';
   applyBgImage(collectFormDesign());
 });
 
@@ -280,20 +317,24 @@ function getFileUrl(id, previewSelector){
 
 function collectFormDesign(){
   const activeShape=document.querySelector('.shape-btn.active');
+  const pcEl=document.getElementById('bgFilePc');
+  const mobEl=document.getElementById('bgFileMobile');
   return {
-    accent:       document.getElementById('colorAccent').value,
-    bg:           document.getElementById('colorBg').value,
-    surface:      document.getElementById('colorSurface').value,
-    text:         document.getElementById('colorText').value,
-    logoText:     document.getElementById('colorLogoText').value,
-    cardOpacity:  parseInt(document.getElementById('cardOpacity').value,10),
-    shape:        activeShape?activeShape.dataset.shape:'circle',
-    buzzerText:   document.getElementById('buzzerText').value.trim()||'BUZZ',
-    title:        document.getElementById('siteTitle').value.trim()||'QUIZ BUZZER',
-    logo:         getFileUrl('logoFile','#logoPreview img'),
-    icon:         getFileUrl('iconFile','#iconPreview img'),
-    bgImagePc:    getFileUrl('bgFilePc','#bgPreviewPc img'),
-    bgImageMobile:getFileUrl('bgFileMobile','#bgPreviewMobile img'),
+    accent:        document.getElementById('colorAccent').value,
+    bg:            document.getElementById('colorBg').value,
+    surface:       document.getElementById('colorSurface').value,
+    text:          document.getElementById('colorText').value,
+    logoText:      document.getElementById('colorLogoText').value,
+    cardOpacity:   parseInt(document.getElementById('cardOpacity').value,10),
+    shape:         activeShape?activeShape.dataset.shape:'circle',
+    buzzerText:    document.getElementById('buzzerText').value.trim()||'BUZZ',
+    title:         document.getElementById('siteTitle').value.trim()||'QUIZ BUZZER',
+    logo:          getFileUrl('logoFile','#logoPreview img'),
+    icon:          getFileUrl('iconFile','#iconPreview img'),
+    bgImagePc:     getFileUrl('bgFilePc','#bgPreviewPc img'),
+    bgImageMobile: getFileUrl('bgFileMobile','#bgPreviewMobile img'),
+    bgColorPc:     pcEl.dataset.bgColor || '',
+    bgColorMobile: mobEl.dataset.bgColor || '',
   };
 }
 

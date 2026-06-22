@@ -223,10 +223,13 @@ function applyDesign(d) {
     document.body.style.backgroundImage = `url(${bgImg})`;
     document.body.style.backgroundSize = 'cover';
     document.body.style.backgroundPosition = 'top center';
-    // 모바일 Safari/Chrome은 fixed가 오작동 → scroll로 대체
     document.body.style.backgroundAttachment = isMobile ? 'scroll' : 'fixed';
     document.body.style.backgroundRepeat = 'no-repeat';
-    // 모바일에서 html/body 높이를 100%로 고정해 배경이 잘리지 않게
+    // 이미지 하단 아래로 자연스럽게 이어지는 배경색
+    const bgColor = isMobile
+      ? (d.bgColorMobile || d.bgColorPc || d.bgColor || '')
+      : (d.bgColorPc || d.bgColor || '');
+    document.body.style.backgroundColor = bgColor;
     if (isMobile) {
       document.documentElement.style.minHeight = '100%';
       document.body.style.minHeight = '100vh';
@@ -234,6 +237,7 @@ function applyDesign(d) {
   } else {
     document.body.style.backgroundImage = '';
     document.body.style.backgroundAttachment = '';
+    document.body.style.backgroundColor = '';
   }
 
   // 브랜드 영역 재구성 (원 도형 없이)
