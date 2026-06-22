@@ -589,6 +589,16 @@ textarea {
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  html { min-height: 100%; }
+  body {
+    min-height: 100vh;
+    /* 모바일 Safari에서 fixed 오작동 방지 */
+    background-attachment: scroll !important;
+    background-position: top center !important;
+  }
+}
+
 @media (max-width: 480px) {
   h1 { font-size: 28px; }
   .room-code-box .code { font-size: 40px; letter-spacing: 6px; }

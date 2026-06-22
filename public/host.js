@@ -142,10 +142,16 @@ function applyBgImage(d){
   if(img){
     document.body.style.backgroundImage=`url(${img})`;
     document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
+    document.body.style.backgroundPosition='top center';
+    document.body.style.backgroundRepeat='no-repeat';
+    document.body.style.backgroundAttachment= isMobile ? 'scroll' : 'fixed';
+    if(isMobile){
+      document.documentElement.style.minHeight='100%';
+      document.body.style.minHeight='100vh';
+    }
   } else {
     document.body.style.backgroundImage='';
+    document.body.style.backgroundAttachment='';
   }
 }
 window.addEventListener('resize', ()=>{ applyBgImage(loadDesign()); });
@@ -201,10 +207,14 @@ function handleFile(inputId, onLoad){
 handleFile('bgFilePc', url=>{
   document.getElementById('bgPreviewPc').innerHTML=`<img src="${url}" />`;
   document.getElementById('bgFilePc').dataset.dataUrl=url;
-  document.body.style.backgroundImage=`url(${url})`;
-  document.body.style.backgroundSize='cover';
-  document.body.style.backgroundPosition='center';
-  document.body.style.backgroundAttachment='fixed';
+  // PC에서 즉시 미리보기 (호스트는 보통 PC)
+  if(window.innerWidth > 768){
+    document.body.style.backgroundImage=`url(${url})`;
+    document.body.style.backgroundSize='cover';
+    document.body.style.backgroundPosition='top center';
+    document.body.style.backgroundRepeat='no-repeat';
+    document.body.style.backgroundAttachment='fixed';
+  }
 });
 document.getElementById('bgRemovePcBtn').addEventListener('click',()=>{
   document.getElementById('bgPreviewPc').innerHTML='<span>PC 배경 이미지 없음</span>';
@@ -220,8 +230,11 @@ handleFile('bgFileMobile', url=>{
   if(window.innerWidth<=768){
     document.body.style.backgroundImage=`url(${url})`;
     document.body.style.backgroundSize='cover';
-    document.body.style.backgroundPosition='center';
-    document.body.style.backgroundAttachment='fixed';
+    document.body.style.backgroundPosition='top center';
+    document.body.style.backgroundRepeat='no-repeat';
+    document.body.style.backgroundAttachment='scroll';
+    document.documentElement.style.minHeight='100%';
+    document.body.style.minHeight='100vh';
   }
 });
 document.getElementById('bgRemoveMobileBtn').addEventListener('click',()=>{

@@ -222,10 +222,18 @@ function applyDesign(d) {
   if (bgImg) {
     document.body.style.backgroundImage = `url(${bgImg})`;
     document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundAttachment = 'fixed';
+    document.body.style.backgroundPosition = 'top center';
+    // 모바일 Safari/Chrome은 fixed가 오작동 → scroll로 대체
+    document.body.style.backgroundAttachment = isMobile ? 'scroll' : 'fixed';
+    document.body.style.backgroundRepeat = 'no-repeat';
+    // 모바일에서 html/body 높이를 100%로 고정해 배경이 잘리지 않게
+    if (isMobile) {
+      document.documentElement.style.minHeight = '100%';
+      document.body.style.minHeight = '100vh';
+    }
   } else {
     document.body.style.backgroundImage = '';
+    document.body.style.backgroundAttachment = '';
   }
 
   // 브랜드 영역 재구성 (원 도형 없이)
