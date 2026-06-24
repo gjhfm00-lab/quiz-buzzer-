@@ -252,25 +252,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── 디자인 브로드캐스트 (이미지 base64 제거 후 URL만 저장) ──
+  // ── 디자인 브로드캐스트 ──
   socket.on('designUpdate', (design) => {
     const code = socket.data.roomCode;
     if (!code || socket.data.role !== 'host') return;
     const room = rooms.get(code);
     if (!room) return;
-
-    // base64 데이터는 서버에 저장하지 않음 (트래픽/메모리 폭발 방지)
-    // 이미지 필드는 URL 문자열만 허용 (data: 로 시작하면 제거)
-    const safeDesign = { ...design };
-    ['bgImagePc', 'bgImageMobile', 'logo', 'icon'].forEach(key => {
-      if (safeDesign[key] && safeDesign[key].startsWith('data:')) {
-        delete safeDesign[key]; // base64는 서버에서 버림
-      }
-    });
-
-    room.design = safeDesign;
-    // 참가자에게 브로드캐스트 (이미지 없는 디자인 설정만)
-    socket.to(code).emit('designUpdate', safeDesign);
+    room.design = design;
+    socket.to(code).emit('designUpdate', design);
   });
 
   // ── 잠금 토글 ──
