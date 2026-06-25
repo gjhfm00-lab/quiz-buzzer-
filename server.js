@@ -1,84 +1,42 @@
 const express = require('express');
 const http = require('http');
 const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-
-// 업로드 폴더 생성
-const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-// 전역 디자인을 파일로 영속 저장 (서버 재시작해도 유지)
-const DESIGN_FILE = path.join(__dirname, 'global-design.json');
-
-function loadGlobalDesign() {
-  try {
-    if (fs.existsSync(DESIGN_FILE)) return JSON.parse(fs.readFileSync(DESIGN_FILE, 'utf8'));
-  } catch {}
-  return null;
-}
-
-function saveGlobalDesign(d) {
-  try { fs.writeFileSync(DESIGN_FILE, JSON.stringify(d), 'utf8'); } catch {}
-}
-
-// multer 설정 - 파일을 public/uploads에 저장
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  },
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('이미지 파일만 업로드할 수 있습니다.'));
-  },
-});
-
-// 이미지 업로드 API
-app.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) { res.status(400).json({ error: '파일이 없습니다.' }); return; }
-  const url = `/uploads/${req.file.filename}`;
-  res.json({ url });
-});
 
 // 700명 이상 동시 접속 대비 설정
 const io = new Server(server, {
   pingTimeout: 60000,
   pingInterval: 25000,
   transports: ['websocket', 'polling'],
-  maxHttpBufferSize: 1e6, // 소켓 메시지 크기 제한 (이미지는 HTTP로만)
+  maxHttpBufferSize: 5e6,
+  // polling 연결 압축으로 트래픽 절감
   httpCompression: { threshold: 1024 },
   perMessageDeflate: { threshold: 1024 },
+  // 연결 당 이벤트 처리량 제한 (QR 동시 진입 spike 대응)
   connectTimeout: 10000,
 });
 
-// 정적 파일 캐시
+// 정적 파일 캐시 헤더 (QR 동시 진입 시 중복 다운로드 방지)
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '5m', etag: true, lastModified: true,
+  maxAge: '5m',
+  etag: true,
+  lastModified: true,
 }));
 
-// QR 진입 리다이렉트
+// QR 진입 전용 경량 리다이렉트 엔드포인트 (/join?code=XXXX)
+// 실제 파일 대신 이 경로로 QR을 만들면 트래픽을 분산할 수 있음
 app.get('/join', (req, res) => {
   const code = (req.query.code || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (!code) { res.redirect('/player.html'); return; }
+  // 301 캐시 가능 리다이렉트로 브라우저가 다음엔 직접 이동
   res.set('Cache-Control', 'public, max-age=300');
   res.redirect(301, `/player.html?code=${code}`);
 });
 
-// 전역 디자인 설정 (방과 무관하게 공유 — 파일에서 복원)
-let globalDesign = loadGlobalDesign();
-
-// 연결 수 모니터링
+// 연결 수 모니터링 (로그)
 let peakConnections = 0;
 setInterval(() => {
   const count = io.sockets.sockets.size;
@@ -132,8 +90,7 @@ function sendRoomList(socket) {
 
 io.on('connection', (socket) => {
 
-  // 새로 접속한 누구에게든 현재 전역 디자인 즉시 전송
-  if (globalDesign) socket.emit('designUpdate', globalDesign);
+  // ── 방 만들기 ──
   socket.on('createRoom', ({ customCode } = {}) => {
     let code;
     if (customCode && customCode.length >= 1) {
@@ -249,9 +206,7 @@ io.on('connection', (socket) => {
     socket.emit('buzzUpdate', { buzzes: room.buzzes });
     socket.emit('lockUpdate', { locked: room.locked });
     socket.emit('roundUpdate', { round: room.round });
-    // 방 디자인 또는 전역 디자인 전달
-    const d = room.design || globalDesign;
-    if (d) socket.emit('designUpdate', d);
+    if (room.design) socket.emit('designUpdate', room.design);
     broadcastPlayerList(code);
   });
 
@@ -297,31 +252,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── 디자인 브로드캐스트 (전역 - 모든 접속자에게 공유) ──
+  // ── 디자인 브로드캐스트 ──
   socket.on('designUpdate', (design) => {
-    // base64 이미지 차단
-    const safeDesign = { ...design };
-    ['bgImagePc','bgImageMobile','logo','icon','bgUrlPc','bgUrlMobile','logoUrl','iconUrl'].forEach(key => {
-      if (safeDesign[key] && String(safeDesign[key]).startsWith('data:')) delete safeDesign[key];
-    });
-
-    globalDesign = safeDesign;
-    saveGlobalDesign(safeDesign);
-
-    // 나를 포함한 모든 접속자에게 전파 (io.emit = 전체 브로드캐스트)
-    io.emit('designUpdate', safeDesign);
-
-    // 방 디자인에도 저장
     const code = socket.data.roomCode;
-    if (code) {
-      const room = rooms.get(code);
-      if (room) room.design = safeDesign;
-    }
-  });
-
-  // ── 전역 디자인 조회 ──
-  socket.on('getGlobalDesign', () => {
-    if (globalDesign) socket.emit('designUpdate', globalDesign);
+    if (!code || socket.data.role !== 'host') return;
+    const room = rooms.get(code);
+    if (!room) return;
+    room.design = design;
+    socket.to(code).emit('designUpdate', design);
   });
 
   // ── 잠금 토글 ──
